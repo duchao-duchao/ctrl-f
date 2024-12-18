@@ -5,7 +5,7 @@ class TextSearch {
       backgroundColor: '#fff',
       textColor: '#000',
       highlightColor: 'yellow',
-      searchBoxWidth: '300px',
+      searchBoxWidth: '96%',
       ...options, // 用户传入的配置会覆盖默认配置
     };
 
@@ -27,7 +27,8 @@ class TextSearch {
     this.searchBox.style.color = this.options.textColor;
     this.searchBox.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
     this.searchBox.style.zIndex = '9999';
-    this.searchBox.style.cursor = 'move'; // 允许拖拽
+    this.searchBox.style.cursor = 'move';
+    this.searchBox.style.width = '376px';
 
     const inputField = document.createElement('input');
     inputField.type = 'text';
@@ -35,18 +36,28 @@ class TextSearch {
     inputField.style.width = this.options.searchBoxWidth;
     inputField.style.padding = '5px';
 
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'Close';
-    closeButton.style.marginLeft = '10px';
-    closeButton.style.padding = '5px';
+    const title = document.createElement('div')
+    title.style.height = '48px'
+    title.style.display = 'flex'
+    title.style.alignItems = 'center'
+    title.style.justifyContent = 'space-between'
+  
+    const titleName = document.createElement('div')
+    titleName.innerText='查找'
 
-    closeButton.addEventListener('click', () => {
+    const titleClose = document.createElement('div')
+    titleClose.innerText='关闭'
+
+    titleClose.addEventListener('click', () => {
       this.closeSearchBox();
       this.clearHighlights();
     });
 
+    title.appendChild(titleName)
+    title.appendChild(titleClose)
+
+    this.searchBox.appendChild(title);
     this.searchBox.appendChild(inputField);
-    this.searchBox.appendChild(closeButton);
     document.body.appendChild(this.searchBox);
 
     inputField.addEventListener('input', (e) => {
@@ -71,8 +82,24 @@ class TextSearch {
     const highlightedElements = document.querySelectorAll('.highlighted');
     highlightedElements.forEach((element) => {
       const parentNode = element.parentNode;
-      const textNode = document.createTextNode(element.textContent); // 创建Text节点
-      parentNode.replaceChild(textNode, element); // 用Text节点替换span
+      // 获取所有同级节点（包括文本节点和高亮的span节点）
+      const siblingNodes = [];
+      let currentNode = element.previousSibling;
+      while (currentNode) {
+        siblingNodes.unshift(currentNode);
+        currentNode = currentNode.previousSibling;
+      }
+      siblingNodes.push(element)
+      currentNode = element.nextSibling;
+      while (currentNode) {
+        siblingNodes.push(currentNode);
+        currentNode = currentNode.nextSibling;
+      }
+      // 重新组合所有同级节点的文本内容
+      const combinedText = siblingNodes.map(node => node.textContent).join('');
+      // 创建一个新的文本节点来替换所有同级节点
+      const textNode = document.createTextNode(combinedText);
+      parentNode?.replaceChildren(textNode)
     });
   }
 
@@ -135,7 +162,7 @@ class TextSearch {
   // 监听 Ctrl+F 快捷键
   listenForSearch() {
     window.addEventListener('keydown', (event) => {
-      if (event.ctrlKey && event.key === 'f') {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault(); // 防止浏览器默认的 Ctrl+F 行为
         this.createSearchBox();
       }
