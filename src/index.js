@@ -4,10 +4,14 @@ class TextSearch {
     this.options = {
       backgroundColor: '#fff',
       textColor: '#000',
-      highlightColor: 'yellow',
+      highlightColor: 'yellow',  // 默认黄色
+      currentHighlightColor: 'orange',  // 当前高亮为橙色
       searchBoxWidth: '96%',
       ...options, // 用户传入的配置会覆盖默认配置
     };
+
+    this.matches = []; // 存储匹配项
+    this.currentIndex = -1; // 当前高亮的索引
 
     this.createSearchBox(); // 创建搜索框
     this.listenForSearch(); // 监听 Ctrl+F 快捷键
@@ -36,28 +40,48 @@ class TextSearch {
     inputField.style.width = this.options.searchBoxWidth;
     inputField.style.padding = '5px';
 
-    const title = document.createElement('div')
-    title.style.height = '48px'
-    title.style.display = 'flex'
-    title.style.alignItems = 'center'
-    title.style.justifyContent = 'space-between'
-  
-    const titleName = document.createElement('div')
-    titleName.innerText='查找'
+    const title = document.createElement('div');
+    title.style.height = '48px';
+    title.style.display = 'flex';
+    title.style.alignItems = 'center';
+    title.style.justifyContent = 'space-between';
 
-    const titleClose = document.createElement('div')
-    titleClose.innerText='关闭'
+    const titleName = document.createElement('div');
+    titleName.innerText = '查找';
+
+    const titleClose = document.createElement('div');
+    titleClose.innerText = '关闭';
 
     titleClose.addEventListener('click', () => {
       this.closeSearchBox();
       this.clearHighlights();
     });
 
-    title.appendChild(titleName)
-    title.appendChild(titleClose)
+    title.appendChild(titleName);
+    title.appendChild(titleClose);
+
+    // 上下按钮容器
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.marginTop = '10px';
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.justifyContent = 'space-between';
+
+    const prevButton = document.createElement('button');
+    prevButton.innerText = '上一处';
+    prevButton.style.padding = '5px 10px';
+    prevButton.addEventListener('click', () => this.highlightPrevious());
+
+    const nextButton = document.createElement('button');
+    nextButton.innerText = '下一处';
+    nextButton.style.padding = '5px 10px';
+    nextButton.addEventListener('click', () => this.highlightNext());
+
+    buttonContainer.appendChild(prevButton);
+    buttonContainer.appendChild(nextButton);
 
     this.searchBox.appendChild(title);
     this.searchBox.appendChild(inputField);
+    this.searchBox.appendChild(buttonContainer);
     document.body.appendChild(this.searchBox);
 
     inputField.addEventListener('input', (e) => {
@@ -82,31 +106,29 @@ class TextSearch {
     const highlightedElements = document.querySelectorAll('.highlighted');
     highlightedElements.forEach((element) => {
       const parentNode = element.parentNode;
-      // 获取所有同级节点（包括文本节点和高亮的span节点）
       const siblingNodes = [];
       let currentNode = element.previousSibling;
       while (currentNode) {
         siblingNodes.unshift(currentNode);
         currentNode = currentNode.previousSibling;
       }
-      siblingNodes.push(element)
+      siblingNodes.push(element);
       currentNode = element.nextSibling;
       while (currentNode) {
         siblingNodes.push(currentNode);
         currentNode = currentNode.nextSibling;
       }
-      // 重新组合所有同级节点的文本内容
-      const combinedText = siblingNodes.map(node => node.textContent).join('');
-      // 创建一个新的文本节点来替换所有同级节点
+      const combinedText = siblingNodes.map((node) => node.textContent).join('');
       const textNode = document.createTextNode(combinedText);
-      parentNode?.replaceChildren(textNode)
+      parentNode?.replaceChildren(textNode);
     });
+    this.matches = []; // 清空已匹配的文本
+    this.currentIndex = -1; // 重置当前高亮索引
   }
 
   // 执行搜索并高亮匹配的文本
   searchText(query) {
-    // 每次搜索前先清除所有的高亮
-    this.clearHighlights();
+    this.clearHighlights(); // 清除之前的高亮
 
     if (!query.trim()) {
       return;
@@ -141,16 +163,23 @@ class TextSearch {
 
     // 清空文本节点，并为每个部分创建 span
     const parentNode = node.parentNode;
-    const fragment = document.createDocumentFragment(); // 使用文档片段减少DOM操作
+    const fragment = document.createDocumentFragment();
 
     parts.forEach((part) => {
+      const span = document.createElement('span');
       if (part.toLowerCase() === query.toLowerCase()) {
-        const span = document.createElement('span');
-        span.style.backgroundColor = this.options.highlightColor;
-        span.style.fontWeight = 'bold';
         span.className = 'highlighted'; // 给span添加class，方便后续清理
+        if (this.matches.length === 0 || this.matches.length === this.currentIndex + 1) {
+          span.style.backgroundColor = this.options.currentHighlightColor;  // 当前高亮为橙色
+        } else {
+          span.style.backgroundColor = this.options.highlightColor;  // 其余为黄色
+        }
+        span.style.fontWeight = 'bold';
         span.textContent = part;
         fragment.appendChild(span);
+        
+        // 存储匹配项位置
+        this.matches.push(span);
       } else {
         fragment.appendChild(document.createTextNode(part));
       }
@@ -190,6 +219,40 @@ class TextSearch {
     window.addEventListener('mouseup', () => {
       isDragging = false;
     });
+  }
+
+  // 高亮下一个匹配项
+  highlightNext() {
+    if (this.matches.length === 0) return;
+
+    this.currentIndex = (this.currentIndex + 1) % this.matches.length;
+    this.updateHighlightColors();
+    this.scrollToMatch(this.matches[this.currentIndex]);
+  }
+
+  // 高亮上一个匹配项
+  highlightPrevious() {
+    if (this.matches.length === 0) return;
+
+    this.currentIndex = (this.currentIndex - 1 + this.matches.length) % this.matches.length;
+    this.updateHighlightColors();
+    this.scrollToMatch(this.matches[this.currentIndex]);
+  }
+
+  // 更新高亮颜色
+  updateHighlightColors() {
+    this.matches.forEach((match, index) => {
+      if (index === this.currentIndex) {
+        match.style.backgroundColor = this.options.currentHighlightColor; // 当前项橙色
+      } else {
+        match.style.backgroundColor = this.options.highlightColor; // 其他项黄色
+      }
+    });
+  }
+
+  // 滚动到当前匹配项
+  scrollToMatch(match) {
+    match.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
 
