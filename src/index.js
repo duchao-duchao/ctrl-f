@@ -18,79 +18,135 @@ class TextSearch {
     this.clearHighlights(); // 初始化时清除高亮
   }
 
-  // 创建并插入搜索框
   createSearchBox() {
-    if (this.searchBox) return; // 如果搜索框已经存在，则不重复创建
-
+    if (this.searchBox) return; // 防止重复创建
+  
     this.searchBox = document.createElement('div');
     this.searchBox.style.position = 'fixed';
     this.searchBox.style.top = '10px';
     this.searchBox.style.right = '10px';
-    this.searchBox.style.padding = '10px';
-    this.searchBox.style.backgroundColor = this.options.backgroundColor;
+    this.searchBox.style.padding = '20px';
+    this.searchBox.style.backgroundColor = '#f9f9f9';  // 浅灰色背景
     this.searchBox.style.color = this.options.textColor;
-    this.searchBox.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
+    this.searchBox.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'; // 阴影效果
+    this.searchBox.style.borderRadius = '10px'; // 圆角
     this.searchBox.style.zIndex = '9999';
-    this.searchBox.style.cursor = 'move';
-    this.searchBox.style.width = '376px';
-
-    const inputField = document.createElement('input');
-    inputField.type = 'text';
-    inputField.placeholder = 'Search...';
-    inputField.style.width = this.options.searchBoxWidth;
-    inputField.style.padding = '5px';
-
+    this.searchBox.style.width = '380px';
+  
+    // 标题栏
     const title = document.createElement('div');
-    title.style.height = '48px';
+    title.style.fontSize = '16px';
+    title.style.fontWeight = 'bold';
+    title.style.marginBottom = '10px';
     title.style.display = 'flex';
-    title.style.alignItems = 'center';
     title.style.justifyContent = 'space-between';
-
+    title.style.alignItems = 'center';
+    title.style.paddingBottom = '10px';
+    title.style.borderBottom = '1px solid #ddd';  // 添加底部边框
+  
     const titleName = document.createElement('div');
     titleName.innerText = '查找';
-
+  
     const titleClose = document.createElement('div');
     titleClose.innerText = '关闭';
-
+    titleClose.style.cursor = 'pointer';
+    titleClose.style.color = '#d9534f';  // 红色
     titleClose.addEventListener('click', () => {
       this.closeSearchBox();
       this.clearHighlights();
     });
-
+  
     title.appendChild(titleName);
     title.appendChild(titleClose);
-
+  
+    // 输入框
+    const inputField = document.createElement('input');
+    inputField.type = 'text';
+    inputField.placeholder = 'Search...';
+    inputField.style.width = this.options.searchBoxWidth;
+    inputField.style.padding = '10px';
+    inputField.style.marginTop = '10px';
+    inputField.style.border = '1px solid #ccc';
+    inputField.style.borderRadius = '8px'; // 圆角
+    inputField.style.fontSize = '14px';
+    inputField.style.color = '#333';
+    inputField.style.outline = 'none';  // 去掉聚焦时的边框
+    inputField.style.transition = 'all 0.3s ease';
+  
+    inputField.addEventListener('focus', () => {
+      inputField.style.borderColor = '#007bff'; // 聚焦时变蓝
+    });
+  
+    inputField.addEventListener('blur', () => {
+      inputField.style.borderColor = '#ccc'; // 聚焦时恢复默认边框
+    });
+  
     // 上下按钮容器
     const buttonContainer = document.createElement('div');
-    buttonContainer.style.marginTop = '10px';
+    buttonContainer.style.marginTop = '20px';
     buttonContainer.style.display = 'flex';
     buttonContainer.style.justifyContent = 'space-between';
-
+  
+    // 上一个按钮
     const prevButton = document.createElement('button');
     prevButton.innerText = '上一处';
-    prevButton.style.padding = '5px 10px';
+    prevButton.style.padding = '8px 15px';
+    prevButton.style.backgroundColor = '#007bff'; // 蓝色背景
+    prevButton.style.color = '#fff';
+    prevButton.style.border = 'none';
+    prevButton.style.borderRadius = '5px';
+    prevButton.style.fontSize = '14px';
+    prevButton.style.cursor = 'pointer';
+    prevButton.style.transition = 'background-color 0.3s ease';
+  
     prevButton.addEventListener('click', () => this.highlightPrevious());
-
+  
+    prevButton.addEventListener('mouseover', () => {
+      prevButton.style.backgroundColor = '#0056b3'; // 悬停变深蓝
+    });
+  
+    prevButton.addEventListener('mouseout', () => {
+      prevButton.style.backgroundColor = '#007bff'; // 恢复原色
+    });
+  
+    // 下一个按钮
     const nextButton = document.createElement('button');
     nextButton.innerText = '下一处';
-    nextButton.style.padding = '5px 10px';
+    nextButton.style.padding = '8px 15px';
+    nextButton.style.backgroundColor = '#28a745'; // 绿色背景
+    nextButton.style.color = '#fff';
+    nextButton.style.border = 'none';
+    nextButton.style.borderRadius = '5px';
+    nextButton.style.fontSize = '14px';
+    nextButton.style.cursor = 'pointer';
+    nextButton.style.transition = 'background-color 0.3s ease';
+  
     nextButton.addEventListener('click', () => this.highlightNext());
-
+  
+    nextButton.addEventListener('mouseover', () => {
+      nextButton.style.backgroundColor = '#218838'; // 悬停变深绿
+    });
+  
+    nextButton.addEventListener('mouseout', () => {
+      nextButton.style.backgroundColor = '#28a745'; // 恢复原色
+    });
+  
     buttonContainer.appendChild(prevButton);
     buttonContainer.appendChild(nextButton);
-
+  
+    // 将元素添加到搜索框
     this.searchBox.appendChild(title);
     this.searchBox.appendChild(inputField);
     this.searchBox.appendChild(buttonContainer);
     document.body.appendChild(this.searchBox);
-
     inputField.addEventListener('input', (e) => {
       this.searchText(e.target.value);
     });
-
+  
     // 拖拽功能
     this.makeDraggable(this.searchBox);
   }
+  
 
   // 关闭搜索框并清除高亮
   closeSearchBox() {
